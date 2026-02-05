@@ -1,6 +1,5 @@
-streamlit
-tavily-python
-requests
 flask
 line-bot-sdk
+requests
+tavily-python
 gunicorn

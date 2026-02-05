@@ -4,7 +4,7 @@ import requests
 st.set_page_config(page_title="EaseMate AI", page_icon="🤖")
 
 st.title("🤖 EaseMate 全能助手")
-st.caption("現在我能記住我們聊過什麼了！")
+st.caption("我現在能理解您的上下文，並根據對話主題持續交流。")
 
 # 1. 初始化對話紀錄
 if "messages" not in st.session_state:
@@ -18,7 +18,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # 3. 處理用戶輸入
-if prompt := st.chat_input("請輸入問題..."):
+if prompt := st.chat_input("請輸入問題或貼上網址..."):
     
     # 顯示用戶訊息
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -27,12 +27,12 @@ if prompt := st.chat_input("請輸入問題..."):
 
     # 4. 呼叫後端 API
     with st.chat_message("assistant"):
-        with st.spinner("思考中..."):
+        with st.spinner("EaseMate 正在思考中..."):
             try:
-                # 準備傳送給後端的資料 (包含歷史紀錄)
+                # 傳送完整的歷史紀錄給後端
                 payload = {
                     "client_name": "Web_User",
-                    "history": st.session_state.messages[:-1] # 傳送除了剛輸入的這一則以外的所有歷史
+                    "history": st.session_state.messages[:-1] # 包含之前的對話
                 }
                 
                 if prompt.startswith("http"):
@@ -50,12 +50,15 @@ if prompt := st.chat_input("請輸入問題..."):
                     # 存入記憶
                     st.session_state.messages.append({"role": "assistant", "content": answer})
                 else:
-                    st.error("連線失敗")
+                    st.error("連線失敗，請檢查 Render 狀態。")
             except Exception as e:
-                st.error(f"錯誤: {e}")
+                st.error(f"連線異常: {e}")
 
 # 側邊欄
 with st.sidebar:
-    if st.button("🧹 清除對話"):
+    st.header("控制面板")
+    if st.button("🧹 清除對話紀錄"):
         st.session_state.messages = []
         st.rerun()
+    st.divider()
+    st.caption("提示：輸入簡短問題（如：例如呢？）時，AI 會根據前文回答；輸入長句時，AI 會啟動聯網搜尋。")

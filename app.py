@@ -1,51 +1,61 @@
 import streamlit as st
 import requests
 
-# 1. 網頁設定 (隱藏 Streamlit 預設選單)
-st.set_page_config(page_title="EaseMate AI", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="EaseMate AI", page_icon="🤖")
 
-hide_menu_style = """
-        <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        </style>
-        """
-st.markdown(hide_menu_style, unsafe_allow_html=True)
+st.title("🤖 EaseMate 全能助手")
+st.caption("現在我能記住我們聊過什麼了！")
 
-# 2. 標題與 Logo
-st.title("🤖 EaseMate AI 助手")
-st.subheader("您的智慧法規與對話夥伴")
-
-# 3. 對話記憶初始化
+# 1. 初始化對話紀錄
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "您好！我是 EaseMate，有什麼我可以幫您的？"}]
+    st.session_state.messages = [
+        {"role": "assistant", "content": "您好！我是 EaseMate。請問今天有什麼我可以幫您的？"}
+    ]
 
-# 4. 顯示對話
+# 2. 顯示歷史對話
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 5. 用戶輸入
-if prompt := st.chat_input("輸入問題或貼上網址..."):
+# 3. 處理用戶輸入
+if prompt := st.chat_input("請輸入問題..."):
+    
+    # 顯示用戶訊息
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # 4. 呼叫後端 API
     with st.chat_message("assistant"):
-        with st.spinner("EaseMate 正在思考中..."):
+        with st.spinner("思考中..."):
             try:
-                # 呼叫你已經部署在 Render 的後端
-                api_url = "https://law-ai-api.onrender.com/research"
-                payload = {"client_name": "Mobile_User"}
+                # 準備傳送給後端的資料 (包含歷史紀錄)
+                payload = {
+                    "client_name": "Web_User",
+                    "history": st.session_state.messages[:-1] # 傳送除了剛輸入的這一則以外的所有歷史
+                }
+                
                 if prompt.startswith("http"):
                     payload["url"] = prompt
                 else:
                     payload["keyword"] = prompt
                 
+                # 呼叫 Render API
+                api_url = "https://law-ai-api.onrender.com/research"
                 response = requests.post(api_url, json=payload, timeout=120)
-                answer = response.json().get("report", "抱歉，暫時無法回應。")
                 
-                st.markdown(answer)
-                st.session_state.messages.append({"role": "assistant", "content": answer})
-            except:
-                st.error("連線超時，請稍後再試。")
+                if response.status_code == 200:
+                    answer = response.json().get("report")
+                    st.markdown(answer)
+                    # 存入記憶
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
+                else:
+                    st.error("連線失敗")
+            except Exception as e:
+                st.error(f"錯誤: {e}")
+
+# 側邊欄
+with st.sidebar:
+    if st.button("🧹 清除對話"):
+        st.session_state.messages = []
+        st.rerun()

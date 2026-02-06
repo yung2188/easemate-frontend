@@ -42,7 +42,7 @@ if prompt := st.chat_input("請輸入問題或貼上網址..."):
                 
                 # 呼叫 Render API
                 api_url = "https://law-ai-api.onrender.com/research"
-                response = requests.post(api_url, json=payload, timeout=120)
+                response = requests.post(api_url, json=payload, timeout=180)
                 
                 if response.status_code == 200:
                     answer = response.json().get("report")
@@ -62,3 +62,4 @@ with st.sidebar:
         st.rerun()
     st.divider()
     st.caption("提示：輸入簡短問題（如：例如呢？）時，AI 會根據前文回答；輸入長句時，AI 會啟動聯網搜尋。")
+
